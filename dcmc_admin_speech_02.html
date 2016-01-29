@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+
+<!-- ********************************************************************** -->        
+<!-- University of Maribor ************************************************ -->
+<!-- Faculty of Organizational Sciences *********************************** -->
+<!-- Cybernetics & Decision Support Systems Laboratory ******************** -->
+<!-- @author Andrej Škraba ************************************************ -->
+<!-- @author Andrej Koložvari********************************************** -->
+<!-- @author Davorin Kofjač *********************************************** -->
+<!-- @author Radovan Stojanović ******************************************* -->
+<!-- ********************************************************************** -->        
+
+<html>
+<head>
+    <title>Govorno upravljanje</title>
+</head>
+
+<style>
+body { font-family: courier}
+</style>        
+    
+<div id="speech" style="border-style:dotted; border-color:#c3c3c3; padding:10px; font-size:24px; font-color:#00ff00; width:477px; text-align:center;">
+Govorni vhod
+</div>
+    
+<div class="right">
+  <button id="start_button" onclick="startButton(event)">Start</button>
+</div>
+<div id="results">
+  <span id="final_span"></span>
+  <span id="interim_span"></span>
+  <p>
+</div>    
+
+<!-- ******************************************************************************************** -->
+<!-- *** Button switchboard ********************************************************************* -->
+<!-- ******************************************************************************************** -->                
+<br></br>
+
+<button id="buttonTurnFwLeftL5R10" style="height: 162px; width: 162px; font-size:35px;">Lfwd</button>
+<button id="buttonForward" style="height: 162px; width: 162px; font-size:35px;">FWD</button>
+<button id="buttonTurnFwRightL10R5" style="height: 162px; width: 162px; font-size:35px;">Rfwd</button>
+<br>
+<button id="buttonSpinLeft" style="height: 162px; width: 162px; font-size:35px;">SpinL</button>
+<button id="STOPctrlButton" style="height: 162px; width: 162px; font-size:35px;">STOP</button>
+<button id="buttonSpinRight" style="height: 162px; width: 162px; font-size:35px;">SpinR</button>
+<br>
+<button id="buttonTurnBkLeftL5R10" style="height: 162px; width: 162px; font-size:35px;">Lbkw</button>
+<button id="buttonBackward" style="height: 162px; width: 162px; font-size:35px;">BKW</button>    
+<button id="buttonTurnBkRightL10R5" style="height: 162px; width: 162px; font-size:35px;">Rbkw</button>
+
+<br></br>
+</p>    
+<!-- ******************************************************************************************** -->
+<!-- ******************************************************************************************** -->
+<!-- ******************************************************************************************** -->    
+
+<body onload="load();"> <!-- Tu pokličemo funkcijo load() za nastavitev spremenljivk ob odprtju html strani -->
+
+<!-- ****************************************** -->        
+<!-- Left Wheel Canvases -->
+<!-- ****************************************** -->        
+    
+<div >
+
+<canvas id="cv1" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+
+<div >
+
+<canvas id="cv2" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+    
+<div >
+
+<canvas id="cv3" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>    
+    
+<!-- ****************************************** -->            
+    
+<!-- ****************************************** -->        
+<!-- Right Wheel Canvases -->
+<!-- ****************************************** -->    
+    
+<div >
+
+<canvas id="cv4" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+
+<div >
+
+<canvas id="cv5" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+    
+<div >
+
+<canvas id="cv6" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>    
+
+<!-- ****************************************** -->        
+    
+    
+<div class = "izpisRazred" id="izpis"></div>
+
+<br>
+
+Želena vrednost naprej -> <input id="zelenaVrednostNaprej" value=0 />
+<button id="zelenaVrednostNaprejButton">Nastavi Naprej</button>    
+<br>
+    
+Želena vrednost nazaj -> <input id="zelenaVrednostNazaj" value=0 />
+<button id="zelenaVrednostNazajButton">Nastavi Nazaj</button>    
+<br>
+    
+Želena vrednost SpinLevo -> <input id="zelenaVrednostSpinLevo" value=0 />
+<button id="zelenaVrednostSpinLevoButton">Nastavi Spin Levo</button>    
+<br>
+    
+Želena vrednost SpinDesno -> <input id="zelenaVrednostSpinDesno" value=0 />
+<button id="zelenaVrednostSpinDesnoButton">Nastavi Spin Desno</button>    
+<br>
+    
+Želena vrednost Hz Levo -> <input id="zelenaVrednostHzLevo" value=0 />
+Želena vrednost Hz Desno -> <input id="zelenaVrednostHzDesno" value=0 />    
+<button id="zelenaVrednostHzNaprej">Nastavi Naprej Hz</button>    
+<button id="zelenaVrednostHzNazaj">Nastavi Nazaj Hz</button>        
+<br>        
+    
+NAP_PWM <input id="val0" value=5 />
+<input id="val1" value=100 />
+<button id="napPWMplus">+</button>
+<button id="napPWMminus">-</button>    
+<button id="send0">Send_0</button>
+<br>
+NAZ_PWM <input id="val2" value=6 />
+<input id="val3" value=100 />
+<button id="nazPWMplus">+</button>
+<button id="nazPWMminus">-</button>    
+<button id="send1">Send_1</button>
+<br>
+LEV_PWM <input id="val4" value=9 />
+<input id="val5" value=100 />
+<button id="levPWMplus">+</button>
+<button id="levPWMminus">-</button>    
+<button id="send2">Send_2</button>
+<br>
+DES_PWM <input id="val6" value=10 />
+<input id="val7" value=100 />
+<button id="desPWMplus">+</button>
+<button id="desPWMminus">-</button>    
+<button id="send3">Send_3</button>
+<br>    
+    
+<div id="output"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    
+var encoderValueLeft = 0;
+var encoderValueRight = 0;
+
+var output = document.getElementById('izpis');
+var stevec = 0;
+
+var x1 = new Array(); // polje (Array) za x spremenljivko
+var y1 = new Array();
+var canvas1, ctx1; // spremenljivki za platno in kontekst (ctx)
+
+var x2 = new Array(); // polje (Array) za x spremenljivko
+var y2 = new Array();
+var canvas2, ctx2; // spremenljivki za platno in kontekst (ctx)
+    
+var x3 = new Array(); // polje (Array) za x spremenljivko
+var y3 = new Array();
+var canvas3, ctx3; // spremenljivki za platno in kontekst (ctx)    
+    
+var x4 = new Array(); // polje (Array) za x spremenljivko
+var y4 = new Array();
+var canvas4, ctx4; // spremenljivki za platno in kontekst (ctx)    
+    
+var x5 = new Array(); // polje (Array) za x spremenljivko
+var y5 = new Array();
+var canvas5, ctx5; // spremenljivki za platno in kontekst (ctx)        
+
+var x6 = new Array(); // polje (Array) za x spremenljivko
+var y6 = new Array();
+var canvas6, ctx6; // spremenljivki za platno in kontekst (ctx)            
+    
+function load() {
+	canvas1 = document.getElementById("cv1");
+	ctx1 = canvas1.getContext("2d");
+    
+    canvas2 = document.getElementById("cv2");
+	ctx2 = canvas2.getContext("2d");
+    
+    canvas3 = document.getElementById("cv3");
+	ctx3 = canvas3.getContext("2d");
+    
+	canvas4 = document.getElementById("cv4");
+	ctx4 = canvas4.getContext("2d");
+    
+    canvas5 = document.getElementById("cv5");
+	ctx5 = canvas5.getContext("2d");
+    
+    canvas6 = document.getElementById("cv6");
+	ctx6 = canvas6.getContext("2d");    
+	
+	//* GRAF 1 *********************************************************************************************************
+	ctx1.lineWidth =   "1";
+	ctx1.strokeStyle = "#7700ef";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x1[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y1[i] = 0; // za y so vrednosti 100
+		ctx1.lineTo(x1[i], (100 - y1[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx1.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 1 *********************************************************************************************************
+    
+	//* GRAF 2 *********************************************************************************************************
+	ctx2.lineWidth =   "1";
+	ctx2.strokeStyle = "#7700ef";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x2[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y2[i] = 0; // za y so vrednosti 100
+		ctx2.lineTo(x2[i], (100 - y2[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx2.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 2
+    
+    //* GRAF 3 *********************************************************************************************************
+	ctx3.lineWidth =   "1";
+	ctx3.strokeStyle = "#7700ef";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x3[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y3[i] = 0; // za y so vrednosti 100
+		ctx3.lineTo(x3[i], (100 - y3[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx3.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 3    
+    
+    //* GRAF 4 *********************************************************************************************************
+	ctx4.lineWidth =   "1";
+	ctx4.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x4[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y4[i] = 0; // za y so vrednosti 100
+		ctx4.lineTo(x4[i], (100 - y4[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx4.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 4
+    
+    //* GRAF 5 *********************************************************************************************************
+	ctx5.lineWidth =   "1";
+	ctx5.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x5[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y5[i] = 0; // za y so vrednosti 100
+		ctx5.lineTo(x5[i], (100 - y5[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx5.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 5    
+    
+//* GRAF 6 *********************************************************************************************************
+	ctx6.lineWidth =   "1";
+	ctx6.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x6[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y6[i] = 0; // za y so vrednosti 100
+		ctx6.lineTo(x6[i], (100 - y6[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx6.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 6        
+    
+    //**********************************************************************************************************
+    
+}    
+
+function ReplaceContentInContainer(id,content) { // za zamenjavo vsebine div-a
+    var container = document.getElementById(id);
+    container.innerHTML = content;
+}    
+    
+// JavaScript, ki bo uporabljen na strani klienta zapišemo tu
+var socket = io.connect("192.168.3.205:8080"); // ustvarimo spremenljivko socket in povemo, kam se povežemo (vtaknemo)
+//var socket = io.connect("193.2.123.38:8080"); // ustvarimo spremenljivko socket in povemo, kam se povežemo (vtaknemo)
+                                               // io.connect je iz knjižnice socket.io.js, argument je, kam se priključimo
+                                               // ta vrstica pove, naj se klient poveže s strežnikom na naslovu http://93.103.18.222:8080
+                                               // torej zgrabimo socket connection na portu 8080
+
+var output    = document.getElementById('output');
+    
+/*
+  , buttonOn  = document.getElementById('buttonOn') // dodamo spremenljivko za gumb On ... t.j. poskrbimo, da je html ločen od javascript kode (če imamo browser, ki ne podpira JavaScript-a - unobtrusive JS)
+  , send0 = document.getElementById('send0') // dodamo spremenljivko za gumb Send
+  , napPWMplus = document.getElementById('napPWMplus') // dodamo spremenljivko za gumb napPWMplus
+  , napPWMminus = document.getElementById('napPWMminus') // dodamo spremenljivko za gumb napPWMminus
+  , nazPWMplus = document.getElementById('nazPWMplus') // dodamo spremenljivko za gumb nazPWMplus
+  , nazPWMminus = document.getElementById('nazPWMminus') // dodamo spremenljivko za gumb nazPWMminus
+  , buttonOff = document.getElementById('buttonOff'); // dodamo spremenljivko za gumb Off
+*/
+    
+var stevec = 0; // števec števila sporočil
+
+function log(msg) { // funkcija za izpis sporočil z izvedenim pomikom (scroll)
+    var node=document.createElement("tr"); // ustvarimo spremenljivko node kot vrstico tabele za izpis
+    var textnode=document.createTextNode(stevec + " | " + msg); // ustvarimo element s tekstom (vrednost stanja)
+    node.appendChild(textnode); // dodamo izpis k "node" t.j. vrstici tabele
+	output.insertBefore(node,output.childNodes[0]); // output je spremenljivka div-a t.j. output = document.getElementById("output")
+        if (stevec > 49) { // če je vrstic več kot 10 (šteti začnemo z 0)
+            output.removeChild(output.childNodes[50],output.childNodes[50]); // odstranimo najstarejši zapis
+		}
+    stevec = stevec + 1; // povečamo števec števila izpisanih sporočil
+}
+
+buttonForward.addEventListener('click', function() {
+/*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 10; // 10Hz je željena vrednost naprej
+    zelenaVrednostNaprej = 10;
+    document.getElementById('zelenaVrednostNazaj').value = 0; // če želimo najprej postavimo želeno vrednost nazaj na 0
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo naprej nočemo SpinLevo
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0; // če želimo naprej nočemo SpinDesno
+    zelenaVrednostSpinDesno = 0;    
+    
+    document.getElementById('val1').value = 124; // nastavimo PWM vrednost naprej v GUI; pri 124 je frekvenca približno 10Hz
+    document.getElementById('val3').value = 0; // PWM vrednosti na pinu za nazaj pri komandi NAPREJ ne sme biti
+    document.getElementById('val5').value = 110; // nastavimo PWM vrednost naprej v GUI za levo
+    document.getElementById('val7').value = 91; // nastavimo PWM vrednost naprej v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 124}); // pošljemo ukaz arduinu
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 0}); // pošljemo ukaz arduino, da je PWM nazaj enak 0
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 110});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 91});
+
+    STARTctrlFW = 1; // zastavico za STARTctrlFW dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+ */   
+    socket.emit("commandToArduinoFW", 1); // command to go ForWard with both wheels 10Hz
+    
+    
+
+});
+
+buttonBackward.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoBK", 1); // command to go ForWard with both wheels 10Hz
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;    
+    
+    document.getElementById('zelenaVrednostNaprej').value = 0; // če želimo nazaj postavimo želeno vrednost naprej na 0
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 10; // 10Hz je željena vrednost nazaj
+    zelenaVrednostNazaj = 10;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo naprej nočemo SpinLevo
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0; // če želimo naprej nočemo SpinDesno
+    zelenaVrednostSpinDesno = 0;    
+
+    document.getElementById('val1').value = 0; // PWM vrednosti na pinu za naprej pri komandi NAZAJ ne sme biti
+    document.getElementById('val3').value = 135; // nastavimo PWM vrednost "NAZAJ" v GUI; pri 135 je frekvenca približno 10Hz    
+    document.getElementById('val5').value = 110; // nastavimo PWM vrednost naprej v GUI za levo
+    document.getElementById('val7').value = 91; // nastavimo PWM vrednost naprej v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 0}); // pošljemo ukaz arduinu, da je PWM naprej enak 0
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 135}); // pošljemo ukaz arduinu, da je PWM naprej enak 0
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 110});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 91});    
+    
+    STARTctrlBK = 1; // zastavico za STARTctrlBK dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+});
+
+buttonSpinLeft.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoSpinL", 1);
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 10; // želena vrednost SpinLevo = 10Hz
+    zelenaVrednostSpinLevo = 10; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0; // če želimo SpinLevo mora biti želena vrednost SpinDesno = 0
+    zelenaVrednostSpinDesno = 0;    
+    
+    document.getElementById('val1').value = 85; // nastavimo PWM vrednost naprej v GUI
+    document.getElementById('val3').value = 116; // PWM vrednosti na pinu za nazaj
+    document.getElementById('val5').value = 131; // nastavimo PWM vrednost v GUI za levo
+    document.getElementById('val7').value = 0; // nastavimo PWM vrednost v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 85});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 116});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 131});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 0});
+
+    STARTctrlSpinL = 1; // zastavico za STARTctrlFW dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+
+});
+    
+buttonSpinRight.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoSpinR", 1);
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo SpinDesno mora biti želena vrednost SpinLevo = 0
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 10; // želena vrednost SpinDesno = 10Hz
+    zelenaVrednostSpinDesno = 10;    
+    
+    document.getElementById('val1').value = 102; // nastavimo PWM vrednost naprej v GUI
+    document.getElementById('val3').value = 98; // PWM vrednosti na pinu za nazaj
+    document.getElementById('val5').value = 0; // nastavimo PWM vrednost v GUI za levo
+    document.getElementById('val7').value = 127; // nastavimo PWM vrednost v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 102});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 98});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 0});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 127});
+
+    STARTctrlSpinR = 1; // zastavico za STARTctrlFW dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+
+});
+    
+buttonTurnFwLeftL5R10.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoTurnFwLeftL5R10", 1);
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    STARTctrlHzLRfw = 0;
+    STARTctrlHzLRbk = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo SpinDesno mora biti želena vrednost SpinLevo = 0
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0;
+    zelenaVrednostSpinDesno = 0;
+    document.getElementById('zelenaVrednostHzLevo').value = 5;
+    zelenaVrednostHzLevo = 5; 
+    document.getElementById('zelenaVrednostHzDesno').value = 10;
+    zelenaVrednostHzDesno = 10;
+    
+    document.getElementById('val1').value = 123; // nastavimo PWM vrednost naprej v GUI
+    document.getElementById('val3').value = 0; // PWM vrednosti na pinu za nazaj
+    document.getElementById('val5').value = 113; // nastavimo PWM vrednost v GUI za levo
+    document.getElementById('val7').value = 87; // nastavimo PWM vrednost v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 123});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 0});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 113});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 87});
+
+    STARTctrlHzLRfw = 1; // zastavico za STARTctrlHzLRfw dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+
+});
+    
+buttonTurnFwRightL10R5.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoTurnFwRightL10R5", 1);
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    STARTctrlHzLRfw = 0;
+    STARTctrlHzLRbk = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo SpinDesno mora biti želena vrednost SpinLevo = 0
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0;
+    zelenaVrednostSpinDesno = 0;
+    document.getElementById('zelenaVrednostHzLevo').value = 10;
+    zelenaVrednostHzLevo = 10; 
+    document.getElementById('zelenaVrednostHzDesno').value = 5;
+    zelenaVrednostHzDesno = 5;
+    
+    document.getElementById('val1').value = 122; // nastavimo PWM vrednost naprej v GUI
+    document.getElementById('val3').value = 0; // PWM vrednosti na pinu za nazaj
+    document.getElementById('val5').value = 91; // nastavimo PWM vrednost v GUI za levo
+    document.getElementById('val7').value = 107; // nastavimo PWM vrednost v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 122});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 0});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 91});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 107});
+
+    STARTctrlHzLRfw = 1; // zastavico za STARTctrlHzLRfw dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+});    
+
+buttonTurnBkLeftL5R10.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoTurnBkLeftL5R10", 1);
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    STARTctrlHzLRfw = 0;
+    STARTctrlHzLRbk = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo SpinDesno mora biti želena vrednost SpinLevo = 0
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0;
+    zelenaVrednostSpinDesno = 0;
+    document.getElementById('zelenaVrednostHzLevo').value = 5;
+    zelenaVrednostHzLevo = 5; 
+    document.getElementById('zelenaVrednostHzDesno').value = 10;
+    zelenaVrednostHzDesno = 10;
+    
+    document.getElementById('val1').value = 0; // nastavimo PWM vrednost naprej v GUI
+    document.getElementById('val3').value = 132; // PWM vrednosti na pinu za nazaj
+    document.getElementById('val5').value = 81; // nastavimo PWM vrednost v GUI za levo
+    document.getElementById('val7').value = 109; // nastavimo PWM vrednost v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 0});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 132});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 81});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 109});
+
+    STARTctrlHzLRbk = 1; // zastavico za STARTctrlHzLRfw dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+
+});
+    
+buttonTurnBkRightL10R5.addEventListener('click', function() {
+    
+    socket.emit("commandToArduinoTurnBkRightL10R5", 1);
+    /*
+    STARTctrlFW = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    STARTctrlHzLRfw = 0;
+    STARTctrlHzLRbk = 0;
+
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0; // če želimo SpinDesno mora biti želena vrednost SpinLevo = 0
+    zelenaVrednostSpinLevo = 0; 
+    document.getElementById('zelenaVrednostSpinDesno').value = 0;
+    zelenaVrednostSpinDesno = 0;
+    document.getElementById('zelenaVrednostHzLevo').value = 10;
+    zelenaVrednostHzLevo = 10; 
+    document.getElementById('zelenaVrednostHzDesno').value = 5;
+    zelenaVrednostHzDesno = 5;
+    
+    document.getElementById('val1').value = 0; // nastavimo PWM vrednost naprej v GUI
+    document.getElementById('val3').value = 132; // PWM vrednosti na pinu za nazaj
+    document.getElementById('val5').value = 113; // nastavimo PWM vrednost v GUI za levo
+    document.getElementById('val7').value = 76; // nastavimo PWM vrednost v GUI za desno
+    
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 0});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 132});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": 113});
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": 76});
+
+    STARTctrlHzLRbk = 1; // zastavico za STARTctrlHzLRfw dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+    */
+
+});    
+    
+// ***********************************************************************
+// NAPREJ - NAZAJ
+// ***********************************************************************    
+    
+napPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val0').value;
+    document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val1').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+napPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val0').value;
+    document.getElementById('val1').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val1').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+nazPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val2').value;
+    document.getElementById('val3').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val3').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+nazPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val2').value;
+    document.getElementById('val3').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val3').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+send0.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val0').value;
+    valuePWM = document.getElementById('val1').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+    
+send1.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val2').value;
+    valuePWM = document.getElementById('val3').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+    
+zelenaVrednostNaprejButton.addEventListener('click', function() {
+    zelenaVrednostNaprej = document.getElementById('zelenaVrednostNaprej').value;
+/*    if (zelenaVrednostNaprej == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNaprej').value = 0;
+        document.getElementById('val1').value = 0;
+        socket.emit("ukazArduinuSTOP");
+            
+    }
+    */
+    
+    STARTctrlFW = 1; // dvignemo zastavico za del kontrolnega algoritma NAPREJ
+    STARTctrlBK = 0; // ostale spustimo
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    //document.getElementById('val1').value = 110;
+    document.getElementById('val3').value = 0;
+});
+    
+zelenaVrednostNazajButton.addEventListener('click', function() {
+    zelenaVrednostNazaj = document.getElementById('zelenaVrednostNazaj').value;
+    /*if (zelenaVrednostNazaj == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNazaj').value = 0;
+        document.getElementById('val3').value = 0;
+        socket.emit("ukazArduinuSTOP");
+        
+    }
+    */
+    
+    STARTctrlBK = 1; // dvignemo zastavico za del kontrolnega algoritma NAZAJ
+    STARTctrlFW = 0; // ostale spustimo
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('val1').value = 0;
+    //document.getElementById('val3').value = 110;
+});
+    
+zelenaVrednostSpinLevoButton.addEventListener('click', function() {
+    zelenaVrednostSpinLevo = document.getElementById('zelenaVrednostSpinLevo').value;
+    
+    STARTctrlSpinL = 1; // dvignemo zastavico za del kontrolnega algoritma SpinL
+    STARTctrlSpinR = 0; // ostale spustimo
+    STARTctrlBK = 0;
+    STARTctrlFW = 0;
+
+    
+    /*if (zelenaVrednostNaprej == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNaprej').value = 0;
+        document.getElementById('val1').value = 0;
+        socket.emit("ukazArduinuSTOP");
+            
+    }
+    */
+    
+    //document.getElementById('zelenaVrednostNazaj').value = 0;
+    //zelenaVrednostNazaj = 0;
+    //document.getElementById('val1').value = 110;
+    //document.getElementById('val3').value = 0;
+});
+    
+zelenaVrednostSpinDesnoButton.addEventListener('click', function() {
+    zelenaVrednostSpinDesno = document.getElementById('zelenaVrednostSpinDesno').value;
+    
+    STARTctrlSpinR = 1; // dvignemo zastavico za del kontrolnega algoritma SpinR
+    STARTctrlSpinL = 0; // ostale spustimo
+    STARTctrlBK = 0;
+    STARTctrlFW = 0;
+    
+    /*if (zelenaVrednostNaprej == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNaprej').value = 0;
+        document.getElementById('val1').value = 0;
+        socket.emit("ukazArduinuSTOP");
+            
+    }
+    */
+    
+    //document.getElementById('zelenaVrednostNazaj').value = 0;
+    //zelenaVrednostNazaj = 0;
+    //document.getElementById('val1').value = 110;
+    //document.getElementById('val3').value = 0;
+});
+    
+zelenaVrednostHzNaprej.addEventListener('click', function() {
+
+    zelenaVrednostHzLevo = document.getElementById('zelenaVrednostHzLevo').value;
+    zelenaVrednostHzDesno = document.getElementById('zelenaVrednostHzDesno').value;
+    
+    STARTctrlSpinR = 0; 
+    STARTctrlSpinL = 0;
+    STARTctrlBK = 0;
+    STARTctrlFW = 0;
+    STARTctrlHzLRfw = 1; // dvignemo zastavico za del kontrolnega algoritma HzLRfw
+    STARTctrlHzLRbk = 0;
+    
+});
+    
+zelenaVrednostHzNazaj.addEventListener('click', function() {
+
+    zelenaVrednostHzLevo = document.getElementById('zelenaVrednostHzLevo').value;
+    zelenaVrednostHzDesno = document.getElementById('zelenaVrednostHzDesno').value;
+    
+    STARTctrlSpinR = 0; 
+    STARTctrlSpinL = 0;
+    STARTctrlBK = 0;
+    STARTctrlFW = 0;
+    STARTctrlHzLRfw = 0;
+    STARTctrlHzLRbk = 1; // dvignemo zastavico za del kontrolnega algoritma HzLRbk
+    
+});    
+    
+STOPctrlButton.addEventListener('click', function() {
+    STARTctrlFW = 0; // zastavice za zagon delov kontrolnega algoritma spusitmo
+    STARTctrlBK = 0;
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    STARTctrlHzLRfw = 0;
+    STARTctrlHzLRbk = 0;
+
+    zelenaVrednostNaprej = 0;
+    zelenaVrednostNazaj = 0;
+    zelenaVrednostSpinLevo = 0;
+    zelenaVrednostSpinDesno = 0;
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    document.getElementById('zelenaVrednostSpinLevo').value = 0;
+    document.getElementById('zelenaVrednostSpinDesno').value = 0;
+    document.getElementById('val1').value = 0;
+    document.getElementById('val3').value = 0;
+    document.getElementById('val5').value = 0;
+    document.getElementById('val7').value = 0;
+    socket.emit("ukazArduinuSTOP");
+});
+    
+      
+    
+// ***********************************************************************
+// LEVO - DESNO
+// ***********************************************************************
+
+levPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val4').value;
+    document.getElementById('val5').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val5').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+levPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val4').value;
+    document.getElementById('val5').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val5').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+desPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val6').value;
+    document.getElementById('val7').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val7').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+desPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val6').value;
+    document.getElementById('val7').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val7').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+send2.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val4').value;
+    valuePWM = document.getElementById('val5').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+    
+send3.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val6').value;
+    valuePWM = document.getElementById('val7').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+}); 
+    
+    
+// ********************************************************************************
+// ********************************************************************************
+// ********************************************************************************
+// ********************************************************************************
+// ********************************************************************************
+// ********************************************************************************
+// ********************************************************************************
+// ********************************************************************************    
+    
+socket.on("refreshClientGUInumValues", function(data) { // refreshing the values from the server to the client GUI; here the numerical fields are updated
+    document.getElementById('zelenaVrednostNaprej').value = data.zelenaVrednostNaprej;
+    document.getElementById('zelenaVrednostNazaj').value = data.zelenaVrednostNazaj;
+    document.getElementById('zelenaVrednostSpinLevo').value = data.zelenaVrednostSpinLevo;
+    document.getElementById('zelenaVrednostSpinDesno').value = data.zelenaVrednostSpinDesno;
+    document.getElementById('zelenaVrednostHzLevo').value = data.zelenaVrednostHzLevo;
+    document.getElementById('zelenaVrednostHzDesno').value = data.zelenaVrednostHzDesno;
+    document.getElementById('val1').value = data.PWMfw;
+    document.getElementById('val3').value = data.PWMbk;
+    document.getElementById('val5').value = data.PWMleft;
+    document.getElementById('val7').value = data.PWMright;
+});  
+    
+socket.on('klientBeri1', function(data) {
+    log(data.vrednost);
+    log(data.cas);
+    encoderValueLeft = data.vrednost;
+    ctx1.clearRect(0,0,canvas1.width, canvas1.height); // brišemo platno -> clearRect
+    ctx1.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y1.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y1[999] = encoderValueLeft;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx1.lineTo(x1[i], (100 - y1[i] * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx1.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx1.fillText(encoderValueLeft, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx1.fillText("1", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx1.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra
+});
+    
+socket.on('readOutFrequencyLeft', function(data) {
+    log("F = " + data.stevilo);
+    log("F = " + data.frekvenca);
+    
+    ctx3.clearRect(0,0,canvas3.width, canvas3.height); // brišemo platno -> clearRect
+    ctx3.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y3.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y3[999] = data.frekvenca;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx3.lineTo(x3[i], (100 - (y3[i] / 50) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx3.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx3.fillText(data.frekvenca, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx3.fillText("50", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx3.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+    var stevilkaUkaza = 2;
+    
+    document.getElementById('val3').value;
+    
+    if (data.frekvenca < zelenaVrednostNaprej) {
+        document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    else if (data.frekvenca > zelenaVrednostNaprej) {
+        document.getElementById('val1').value--; // zmanjšamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    
+});
+    
+socket.on('readOutFrequencyRight', function(data) {
+    log("F = " + data.stevilo);
+    log("F = " + data.frekvenca);
+    
+    ctx6.clearRect(0,0,canvas6.width, canvas6.height); // brišemo platno -> clearRect
+    ctx6.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y6.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y6[999] = data.frekvenca;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx6.lineTo(x6[i], (100 - (y6[i] / 50) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx6.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx6.fillText(data.frekvenca, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx6.fillText("50", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx6.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+    // var stevilkaUkaza = 2;
+    
+    /*
+    document.getElementById('val3').value;
+    
+    if (data.frekvenca < document.getElementById('zelenaVrednost').value) {
+        document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    else if (data.frekvenca > document.getElementById('zelenaVrednost').value) {
+        document.getElementById('val1').value--; // zmanjšamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    */
+    
+});        
+    
+ 
+    
+    
+    
+    
+    
+socket.on('readOutFrequencyLeftRight', function(data) {
+    
+    // Plot frequency Left
+    log("F = " + data.leftCount);
+    log("F = " + data.frequencyLeft);
+    
+    ctx3.clearRect(0,0,canvas3.width, canvas3.height); // brišemo platno -> clearRect
+    ctx3.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y3.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y3[999] = data.frequencyLeft;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx3.lineTo(x3[i], (50 - (y3[i] / 1000) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx3.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx3.fillText(data.frequencyLeft, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx3.fillText("500", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx3.fillText("-500", 973, 97); // Izpišemo max vrednost potenciometra 
+
+    // Plot frequency Right
+    log("F = " + data.rightCount);
+    log("F = " + data.frequencyRight);
+    
+    ctx6.clearRect(0,0,canvas6.width, canvas6.height); // brišemo platno -> clearRect
+    ctx6.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y6.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y6[999] = data.frequencyRight;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx6.lineTo(x6[i], (50 - (y6[i] / 1000) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx6.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx6.fillText(data.frequencyRight, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx6.fillText("500", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx6.fillText("-500", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+
+});
+    
+socket.on('readOutControlLeftRight', function(data) {
+    //log(data.vrednost);
+    //log(data.cas);
+    ControlValueLeft = data.PWMleft;
+    ctx2.clearRect(0,0,canvas2.width, canvas2.height); // brišemo platno -> clearRect
+    ctx2.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y2.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y2[999] = ControlValueLeft;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx2.lineTo(x2[i], (100 - y2[i]/255 * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx2.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx2.fillText(ControlValueLeft, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx2.fillText("255", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx2.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra
+    //log(data.vrednost);
+    //log(data.cas);
+    ControlValueRight = data.PWMright;
+    ctx5.clearRect(0,0,canvas5.width, canvas5.height); // brišemo platno -> clearRect
+    ctx5.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y5.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y5[999] = ControlValueRight;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx5.lineTo(x5[i], (100 - y5[i]/255 * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx5.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx5.fillText(ControlValueRight, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx5.fillText("255", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx5.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra
+});    
+    
+socket.on('klientBeri2', function(data) {
+    log(data.vrednost);
+    log(data.cas);
+    encoderValueRight = data.vrednost;
+    ctx4.clearRect(0,0,canvas4.width, canvas4.height); // brišemo platno -> clearRect
+    ctx4.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y4.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y4[999] = encoderValueRight;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx4.lineTo(x4[i], (100 - y4[i] * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx4.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx4.fillText(encoderValueRight, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx4.fillText("1", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx4.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra
+});
+
+socket.on('sporociloKlientu', function(msg) {
+    log(msg);
+});
+
+// *****************************************************************************
+// Koda za speech API ZAČETEK
+// *****************************************************************************
+
+var final_transcript = '';
+var recognizing = false;
+var ignore_onend;
+var start_timestamp;
+if (!('webkitSpeechRecognition' in window)) {
+  upgrade();
+} else {
+  var recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onstart = function() {
+    recognizing = true;
+    log('Speak now!');
+    document.getElementById("start_button").innerText = "Govorite v mikrofon";
+  };
+
+  recognition.onerror = function(event) {
+    if (event.error == 'no-speech') {
+      document.getElementById("start_button").innerText = "Start Microphone";
+      log('There was no speech indicated!');
+      ignore_onend = true;
+    }
+    if (event.error == 'audio-capture') {
+      document.getElementById("start_button").innerText = "Start Microphone";
+      log('There is no microphone!');
+      ignore_onend = true;
+    }
+    if (event.error == 'not-allowed') {
+      if (event.timeStamp - start_timestamp < 100) {
+        log('The speech is blocked!');
+      } else {
+        log('The speech input is denied!');
+      }
+      ignore_onend = true;
+    }
+  };
+  
+  recognition.onend = function() { // start the recognition once again
+    log("Ponovni zagon!")
+    document.getElementById("start_button").innerText = "Mikrofon onemogočen";
+    recognition.start();
+};
+
+
+var final_trs;
+
+//setTimeout(function(){recognition.stop(); recognition.start(); log("ZAGNANA razpoznava");}, 3000); // po treh sekundah ustavimo in poženemo razpoznavo
+//setTimeout(function(){recognition.stop(); log("STOP");}, 10000);
+//setTimeout(function(){recognition.stop(); log("ZAGNANA razpoznava po 12s");}, 12000);
+
+  recognition.onresult = function(event) {
+    var interim_transcript = '';
+    // interim_transcript += event.results[i][0].transcript;
+    for (var i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        final_transcript += event.results[i][0].transcript;
+        final_trs = event.results[i][0].transcript;
+    interim_transcript += event.results[i][0].transcript;
+        //tempx = event.results[i][0].transcript; 
+        //log(event.results[i][0].transcript);
+      } else {
+        interim_transcript += event.results[i][0].transcript;
+      }
+    } 
+
+    ReplaceContentInContainer("speech", interim_transcript);
+
+
+    //log("final" + final_transcript);
+
+    // interim_span.innerHTML = linebreak(interim_transcript);
+
+    //log("interim" + interim_transcript);
+
+    log(interim_transcript);
+    //log(strcmp(interim_transcript,"house"));
+    //log(strcmp(interim_transcript," house"));
+// kodiranje ukazov - kot na numerični tipkovnici -> 8=naprej 2=nazaj 4=levo 6=desno 5=stop
+
+        // *********************************************************************
+        // STOP
+        // *********************************************************************    
+        //if(interim_transcript == "stoj" || interim_transcript == " stoj" || interim_transcript == "stoji" || interim_transcript == " stoji" || interim_transcript == "stoje" || interim_transcript == " stoje")
+                if(interim_transcript == "break" || interim_transcript == " break" || interim_transcript == "house" || interim_transcript == "how's" || interim_transcript == " how's" || interim_transcript == " house" || interim_transcript == "Red Sox" || interim_transcript == " Red Sox")
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //ReplaceContentInContainer("speech", event.results[i][0].confidence);
+            log("STOP")
+            //var stevilkaUkaza = 5;
+            //document.getElementById("ledblue").innerText = "bLED ON"; // za spremembo napisa na gumbu
+            //toggle4 = 0; // za pravi preklop gumba
+            
+            socket.emit("ukazArduinuSTOP");
+            //socket1.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza});
+            };
+      
+      
+        // *********************************************************************
+        // Naprej
+        // *********************************************************************
+        if(interim_transcript == "go" || interim_transcript == " go") // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("GO");
+            //var stevilkaUkaza = 8;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoFW", 1);
+            
+            
+            };
+        // *********************************************************************
+        // Nazaj
+        // *********************************************************************
+        if(interim_transcript == "back" || interim_transcript == " back" || interim_transcript == "beck" || interim_transcript == " beck" || interim_transcript == "Beck" || interim_transcript == " Beck") // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("BACK");
+            //var stevilkaUkaza = 2;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoBK", 1);
+            };
+        // *********************************************************************
+        // Spin Levo
+        // *********************************************************************
+        if(interim_transcript == "left" || interim_transcript == " left" || interim_transcript == "les" || interim_transcript == " les" || interim_transcript == "less" || interim_transcript == " less" || interim_transcript == "lest" || interim_transcript == " lest" ) // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("LEFT");
+            //var stevilkaUkaza = 4;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoSpinL", 1);
+            };
+        // *********************************************************************
+        // Spin Desno
+        // *********************************************************************
+        if(interim_transcript == "right" || interim_transcript == " right" || interim_transcript == "check" || interim_transcript == " check" || interim_transcript == "run" || interim_transcript == " run" ) // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("RIGHT");
+            //var stevilkaUkaza = 6;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoSpinR", 1);
+            };
+        // *********************************************************************
+        // Naprej Levo
+        // *********************************************************************
+        if(interim_transcript == "go left" || interim_transcript == " go left" || interim_transcript == "forward left" || interim_transcript == " forward left" || interim_transcript == "turn left" || interim_transcript == " turn left" ) // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("RIGHT");
+            //var stevilkaUkaza = 6;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoTurnFwLeftL5R10", 1);
+            };
+        // *********************************************************************
+        // Naprej Desno
+        // *********************************************************************
+        if(interim_transcript == "go right" || interim_transcript == " go right" || interim_transcript == "forward right" || interim_transcript == " forward right" || interim_transcript == "turn right" || interim_transcript == " turn right" ) // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("RIGHT");
+            //var stevilkaUkaza = 6;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoTurnFwRightL10R5", 1);
+            };      
+        // *********************************************************************
+        // Nazaj Levo
+        // *********************************************************************
+        if(interim_transcript == "go back left" || interim_transcript == " go back left" || interim_transcript == "back left" || interim_transcript == " back left" || interim_transcript == "turn back left" || interim_transcript == " turn back left" ) // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("RIGHT");
+            //var stevilkaUkaza = 6;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoTurnBkLeftL5R10", 1);
+            };
+        // *********************************************************************
+        // Nazaj Desno
+        // *********************************************************************
+        if(interim_transcript == "go back right" || interim_transcript == " go back right" || interim_transcript == "back right" || interim_transcript == " back right" || interim_transcript == "turn back right" || interim_transcript == " turn back right" ) // ker napravimo premor med govorom moramo upoštevati tudi presledek+1, t.j. " 1"
+        {
+//            log("confidence = " + event.results[i][0].confidence);
+            //log("RIGHT");
+            //var stevilkaUkaza = 6;
+           // document.getElementById("ledblue").innerText = "bLED OFF"; // za spremembo napisa na gumbu
+            //toggle4 = 1; // za pravi preklop gumba
+            socket.emit("commandToArduinoTurnBkRightL10R5", 1);
+            };            
+      
+
+
+
+//recognition.stop();
+
+  }; // zaključek recognition.on.result
+}
+
+function upgrade() {
+  log('You have to upgrade Chrome to version 25 of higher');
+}
+
+var two_line = /\n\n/g;
+var one_line = /\n/g;
+function linebreak(s) {
+  return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+}
+
+function startButton(event) {
+  if (recognizing) {
+    recognition.stop();
+    return;
+  }
+  final_transcript = '';
+  //recognition.lang = "sr-RS"; // določimo jezik angleščina z ameriškim (angleškim) dialektom; za Српски -> "sr-RS"
+  recognition.lang = "en-US";
+  recognition.start();
+  ignore_onend = false;
+  final_span.innerHTML = '';
+  interim_span.innerHTML = '';
+  document.getElementById("start_button").innerText = "Mikrofon onemogočen";
+  log('Speech is allowed!');
+  start_timestamp = event.timeStamp;
+}
+
+//function strcmp(a, b) {
+//    return (a<b?-1:(a>b?1:0));
+//}
+// *****************************************************************************
+// Koda za speech API KONEC
+// *****************************************************************************    
+    
+    
+</script>
+</body>
+</html>

@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+
+<!-- ********************************************************************** -->        
+<!-- University of Maribor ************************************************ -->
+<!-- Faculty of Organizational Sciences *********************************** -->
+<!-- Cybernetics & Decision Support Systems Laboratory ******************** -->
+<!-- @author Andrej Škraba ************************************************ -->
+<!-- @author Andrej Koložvari********************************************** -->
+<!-- @author Davorin Kofjač *********************************************** -->
+<!-- ********************************************************************** -->        
+
+<html>
+<head>
+    <title>buttongui</title>
+</head>
+
+<body onload="load();"> <!-- Tu pokličemo funkcijo load() za nastavitev spremenljivk ob odprtju html strani -->
+
+<!-- ****************************************** -->        
+<!-- Left Wheel Canvases -->
+<!-- ****************************************** -->        
+    
+<div >
+
+<canvas id="cv1" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+
+<div >
+
+<canvas id="cv2" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+    
+<div >
+
+<canvas id="cv3" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>    
+    
+<!-- ****************************************** -->            
+    
+<!-- ****************************************** -->        
+<!-- Right Wheel Canvases -->
+<!-- ****************************************** -->    
+    
+<div >
+
+<canvas id="cv4" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+
+<div >
+
+<canvas id="cv5" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+    
+<div >
+
+<canvas id="cv6" width = "1000" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>    
+
+<!-- ****************************************** -->        
+    
+    
+<div class = "izpisRazred" id="izpis"></div>
+
+<br>
+    
+<button id="buttonOn">On</button>
+<button id="buttonOff">Off</button>
+<br>        
+
+Želena vrednost naprej -> <input id="zelenaVrednostNaprej" value=0 />
+<button id="zelenaVrednostNaprejButton">Nastavi Naprej</button>    
+<br>
+    
+Želena vrednost nazaj -> <input id="zelenaVrednostNazaj" value=0 />
+<button id="zelenaVrednostNazajButton">Nastavi Nazaj</button>    
+<br>
+    
+Želena vrednost SpinLevo -> <input id="zelenaVrednostSpinLevo" value=0 />
+<button id="zelenaVrednostSpinLevoButton">Nastavi Spin Levo</button>    
+<br>
+    
+Želena vrednost SpinDesno -> <input id="zelenaVrednostSpinDesno" value=0 />
+<button id="zelenaVrednostSpinDesnoButton">Nastavi Spin Desno</button>    
+<br>    
+    
+<button id="STOPctrlForwardBackwardButton">STOP FW BK</button>
+<button id="STARTctrlForwardBackwardButton">START</button>        
+<br>    
+    
+NAP_PWM <input id="val0" value=5 />
+<input id="val1" value=100 />
+<button id="napPWMplus">+</button>
+<button id="napPWMminus">-</button>    
+<button id="send0">Send_0</button>
+<br>
+NAZ_PWM <input id="val2" value=6 />
+<input id="val3" value=0 />
+<button id="nazPWMplus">+</button>
+<button id="nazPWMminus">-</button>    
+<button id="send1">Send_1</button>
+<br>
+LEV_PWM <input id="val4" value=9 />
+<input id="val5" value=102 />
+<button id="levPWMplus">+</button>
+<button id="levPWMminus">-</button>    
+<button id="send2">Send_2</button>
+<br>
+DES_PWM <input id="val6" value=10 />
+<input id="val7" value=99 />
+<button id="desPWMplus">+</button>
+<button id="desPWMminus">-</button>    
+<button id="send3">Send_3</button>
+<br>    
+    
+<button id="buttonForward">FW 10</button>
+<button id="buttonBackward">BK 10</button>
+
+<br>
+
+<div id="output"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    
+var buttonOn  = document.getElementById('buttonOn') // dodamo spremenljivko za gumb On ... t.j. poskrbimo, da je html ločen od javascript kode (če imamo browser, ki ne podpira JavaScript-a - unobtrusive JS)
+, buttonOff = document.getElementById('buttonOff'); // dodamo spremenljivko za gumb Off   
+    
+buttonOn.addEventListener('click', function() {
+    var stevilkaUkaza = 1;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza});
+});
+
+buttonOff.addEventListener('click', function() {
+    var stevilkaUkaza = 0;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza});
+});
+
+    
+var STARTctrlForwardBackward = 0; // zastavica za zagon kontrolnega algortma za Naprej/Nazaj
+var STARTctrlSpinLR = 0; // zastavica za izklop kontrolnega algoritma SpinL/SpinR
+    
+var STARTctrlFW = 0; // zastavica za zagon kontrolnega algortma za Naprej
+var STARTctrlBK = 0; // zastavica za zagon kontrolnega algortma za Nazaj
+var STARTctrlSpinL = 0; // zastavica za vklop kontrolnega algoritma SpinL
+var STARTctrlSpinR = 0; // zastavica za izklop kontrolnega algoritma SpinR    
+
+zelenaVrednostNaprej = 0;    
+zelenaVrednostNazaj = 0;
+    
+zelenaVrednostSpinLevo = 0;    
+zelenaVrednostSpinDesno = 0;         
+    
+var encoderValueLeft = 0;
+var encoderValueRight = 0;
+
+var output = document.getElementById('izpis');
+var stevec = 0;
+
+var x1 = new Array(); // polje (Array) za x spremenljivko
+var y1 = new Array();
+var canvas1, ctx1; // spremenljivki za platno in kontekst (ctx)
+
+var x2 = new Array(); // polje (Array) za x spremenljivko
+var y2 = new Array();
+var canvas2, ctx2; // spremenljivki za platno in kontekst (ctx)
+    
+var x3 = new Array(); // polje (Array) za x spremenljivko
+var y3 = new Array();
+var canvas3, ctx3; // spremenljivki za platno in kontekst (ctx)    
+    
+var x4 = new Array(); // polje (Array) za x spremenljivko
+var y4 = new Array();
+var canvas4, ctx4; // spremenljivki za platno in kontekst (ctx)    
+    
+var x5 = new Array(); // polje (Array) za x spremenljivko
+var y5 = new Array();
+var canvas5, ctx5; // spremenljivki za platno in kontekst (ctx)        
+
+var x6 = new Array(); // polje (Array) za x spremenljivko
+var y6 = new Array();
+var canvas6, ctx6; // spremenljivki za platno in kontekst (ctx)            
+    
+function load() {
+	canvas1 = document.getElementById("cv1");
+	ctx1 = canvas1.getContext("2d");
+    
+    canvas2 = document.getElementById("cv2");
+	ctx2 = canvas2.getContext("2d");
+    
+    canvas3 = document.getElementById("cv3");
+	ctx3 = canvas3.getContext("2d");
+    
+	canvas4 = document.getElementById("cv4");
+	ctx4 = canvas4.getContext("2d");
+    
+    canvas5 = document.getElementById("cv5");
+	ctx5 = canvas5.getContext("2d");
+    
+    canvas6 = document.getElementById("cv6");
+	ctx6 = canvas6.getContext("2d");    
+	
+	//* GRAF 1 *********************************************************************************************************
+	ctx1.lineWidth =   "1";
+	ctx1.strokeStyle = "#7700ef";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x1[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y1[i] = 0; // za y so vrednosti 100
+		ctx1.lineTo(x1[i], (100 - y1[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx1.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 1 *********************************************************************************************************
+    
+	//* GRAF 2 *********************************************************************************************************
+	ctx2.lineWidth =   "1";
+	ctx2.strokeStyle = "#7700ef";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x2[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y2[i] = 0; // za y so vrednosti 100
+		ctx2.lineTo(x2[i], (100 - y2[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx2.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 2
+    
+    //* GRAF 3 *********************************************************************************************************
+	ctx3.lineWidth =   "1";
+	ctx3.strokeStyle = "#7700ef";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x3[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y3[i] = 0; // za y so vrednosti 100
+		ctx3.lineTo(x3[i], (100 - y3[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx3.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 3    
+    
+    //* GRAF 4 *********************************************************************************************************
+	ctx4.lineWidth =   "1";
+	ctx4.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x4[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y4[i] = 0; // za y so vrednosti 100
+		ctx4.lineTo(x4[i], (100 - y4[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx4.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 4
+    
+    //* GRAF 5 *********************************************************************************************************
+	ctx5.lineWidth =   "1";
+	ctx5.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x5[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y5[i] = 0; // za y so vrednosti 100
+		ctx5.lineTo(x5[i], (100 - y5[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx5.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 5    
+    
+//* GRAF 6 *********************************************************************************************************
+	ctx6.lineWidth =   "1";
+	ctx6.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 1000; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x6[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y6[i] = 0; // za y so vrednosti 100
+		ctx6.lineTo(x6[i], (100 - y6[i] * 100));  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx6.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF 6        
+    
+    //**********************************************************************************************************
+    
+}    
+    
+    
+// JavaScript, ki bo uporabljen na strani klienta zapišemo tu
+var socket = io.connect("192.168.3.206:8080"); // ustvarimo spremenljivko socket in povemo, kam se povežemo (vtaknemo)
+                                               // io.connect je iz knjižnice socket.io.js, argument je, kam se priključimo
+                                               // ta vrstica pove, naj se klient poveže s strežnikom na naslovu http://93.103.18.222:8080
+                                               // torej zgrabimo socket connection na portu 8080
+
+var output    = document.getElementById('output');
+    
+/*
+  , buttonOn  = document.getElementById('buttonOn') // dodamo spremenljivko za gumb On ... t.j. poskrbimo, da je html ločen od javascript kode (če imamo browser, ki ne podpira JavaScript-a - unobtrusive JS)
+  , send0 = document.getElementById('send0') // dodamo spremenljivko za gumb Send
+  , napPWMplus = document.getElementById('napPWMplus') // dodamo spremenljivko za gumb napPWMplus
+  , napPWMminus = document.getElementById('napPWMminus') // dodamo spremenljivko za gumb napPWMminus
+  , nazPWMplus = document.getElementById('nazPWMplus') // dodamo spremenljivko za gumb nazPWMplus
+  , nazPWMminus = document.getElementById('nazPWMminus') // dodamo spremenljivko za gumb nazPWMminus
+  , buttonOff = document.getElementById('buttonOff'); // dodamo spremenljivko za gumb Off
+*/
+    
+var stevec = 0; // števec števila sporočil
+
+function log(msg) { // funkcija za izpis sporočil z izvedenim pomikom (scroll)
+    var node=document.createElement("tr"); // ustvarimo spremenljivko node kot vrstico tabele za izpis
+    var textnode=document.createTextNode(stevec + " | " + msg); // ustvarimo element s tekstom (vrednost stanja)
+    node.appendChild(textnode); // dodamo izpis k "node" t.j. vrstici tabele
+	output.insertBefore(node,output.childNodes[0]); // output je spremenljivka div-a t.j. output = document.getElementById("output")
+        if (stevec > 49) { // če je vrstic več kot 10 (šteti začnemo z 0)
+            output.removeChild(output.childNodes[50],output.childNodes[50]); // odstranimo najstarejši zapis
+		}
+    stevec = stevec + 1; // povečamo števec števila izpisanih sporočil
+}
+
+buttonForward.addEventListener('click', function() {
+    STARTctrlForwardBackward = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    document.getElementById('zelenaVrednostNaprej').value = 10; // 10Hz je željena vrednost naprej
+    zelenaVrednostNaprej = 10;
+    document.getElementById('zelenaVrednostNazaj').value = 0; // če želimo najprej postavimo želeno vrednost nazaj na 0
+    zelenaVrednostNazaj = 0;
+    document.getElementById('val1').value = 124; // nastavimo PWM vrednost naprej v GUI; pri 124 je frekvenca približno 10Hz
+
+    document.getElementById('val3').value = 0; // PWM vrednosti na pinu za nazaj pri komandi NAPREJ ne sme biti
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": 0}); // pošljemo ukaz arduino, da je PWM nazaj enak 0
+
+    document.getElementById('val5').value = 110; // nastavimo PWM vrednost naprej v GUI za levo
+    document.getElementById('val7').value = 91; // nastavimo PWM vrednost naprej v GUI za desno
+    STARTctrlForwardBackward = 1; // zastavico za STARTctrlForwardBackward dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+});
+
+buttonBackward.addEventListener('click', function() {
+    STARTctrlForwardBackward = 0; // najprej ustavimo kontrolni algoritem, da nastavimo vhodne vrednosti
+    document.getElementById('zelenaVrednostNazaj').value = 10; // 10Hz je željena vrednost nazaj
+    zelenaVrednostNazaj = 10;
+    document.getElementById('zelenaVrednostNaprej').value = 0; // če želimo nazaj postavimo želeno vrednost naprej na 0
+    zelenaVrednostNaprej = 0;
+    document.getElementById('val3').value = 135; // nastavimo PWM vrednost "NAZAJ" v GUI; pri 135 je frekvenca približno 10Hz
+    
+    document.getElementById('val1').value = 0; // PWM vrednosti na pinu za naprej pri komandi NAZAJ ne sme biti
+    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": 0}); // pošljemo ukaz arduinu, da je PWM naprej enak 0
+
+    document.getElementById('val5').value = 110; // nastavimo PWM vrednost naprej v GUI za levo
+    document.getElementById('val7').value = 91; // nastavimo PWM vrednost naprej v GUI za desno
+    STARTctrlForwardBackward = 1; // zastavico za STARTctrlForwardBackward dvignemo, kontrolni algoritem lahko prične z delom, vse nastavitve zgoraj so vnešene
+});
+
+// ***********************************************************************
+// NAPREJ - NAZAJ
+// ***********************************************************************    
+    
+napPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val0').value;
+    document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val1').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+napPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val0').value;
+    document.getElementById('val1').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val1').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+nazPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val2').value;
+    document.getElementById('val3').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val3').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+nazPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val2').value;
+    document.getElementById('val3').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val3').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+send0.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val0').value;
+    valuePWM = document.getElementById('val1').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+    
+send1.addEventListener('click', function() {
+    var stevilkaUkaza = 2;
+    pinNo = document.getElementById('val2').value;
+    valuePWM = document.getElementById('val3').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+    
+zelenaVrednostNaprejButton.addEventListener('click', function() {
+    zelenaVrednostNaprej = document.getElementById('zelenaVrednostNaprej').value;
+/*    if (zelenaVrednostNaprej == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNaprej').value = 0;
+        document.getElementById('val1').value = 0;
+        socket.emit("ukazArduinuSTOP");
+            
+    }
+    */
+    
+    STARTctrlFW = 1; // dvignemo zastavico za del kontrolnega algoritma NAPREJ
+    STARTctrlBK = 0; // ostale spustimo
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    zelenaVrednostNazaj = 0;
+    //document.getElementById('val1').value = 110;
+    document.getElementById('val3').value = 0;
+});
+    
+zelenaVrednostNazajButton.addEventListener('click', function() {
+    zelenaVrednostNazaj = document.getElementById('zelenaVrednostNazaj').value;
+    /*if (zelenaVrednostNazaj == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNazaj').value = 0;
+        document.getElementById('val3').value = 0;
+        socket.emit("ukazArduinuSTOP");
+        
+    }
+    */
+    
+    STARTctrlBK = 1; // dvignemo zastavico za del kontrolnega algoritma NAZAJ
+    STARTctrlFW = 0; // ostale spustimo
+    STARTctrlSpinL = 0;
+    STARTctrlSpinR = 0;
+    
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    zelenaVrednostNaprej = 0;
+    document.getElementById('val1').value = 0;
+    //document.getElementById('val3').value = 110;
+});
+    
+zelenaVrednostSpinLevoButton.addEventListener('click', function() {
+    zelenaVrednostSpinLevo = document.getElementById('zelenaVrednostSpinLevo').value;
+    
+    STARTctrlSpinL = 1; // dvignemo zastavico za del kontrolnega algoritma SpinL
+    STARTctrlSpinR = 0; // ostale spustimo
+    STARTctrlBK = 0;
+    STARTctrlFW = 0;
+
+    
+    /*if (zelenaVrednostNaprej == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNaprej').value = 0;
+        document.getElementById('val1').value = 0;
+        socket.emit("ukazArduinuSTOP");
+            
+    }
+    */
+    
+    //document.getElementById('zelenaVrednostNazaj').value = 0;
+    //zelenaVrednostNazaj = 0;
+    //document.getElementById('val1').value = 110;
+    //document.getElementById('val3').value = 0;
+});
+    
+zelenaVrednostSpinDesnoButton.addEventListener('click', function() {
+    zelenaVrednostSpinDesno = document.getElementById('zelenaVrednostSpinDesno').value;
+    
+    STARTctrlSpinR = 1; // dvignemo zastavico za del kontrolnega algoritma SpinR
+    STARTctrlSpinL = 0; // ostale spustimo
+    STARTctrlBK = 0;
+    STARTctrlFW = 0;
+    
+    /*if (zelenaVrednostNaprej == 0) {
+        STARTctrlForwardBackward = 0;
+        
+        document.getElementById('zelenaVrednostNaprej').value = 0;
+        document.getElementById('val1').value = 0;
+        socket.emit("ukazArduinuSTOP");
+            
+    }
+    */
+    
+    //document.getElementById('zelenaVrednostNazaj').value = 0;
+    //zelenaVrednostNazaj = 0;
+    //document.getElementById('val1').value = 110;
+    //document.getElementById('val3').value = 0;
+});    
+    
+    
+STOPctrlForwardBackwardButton.addEventListener('click', function() {
+    STARTctrlForwardBackward = 0; // prižgemo zastavico, da se kontrolni algoritem ustavi
+    zelenaVrednostNaprej = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    document.getElementById('val1').value = 0;
+    document.getElementById('val3').value = 0;
+    document.getElementById('val5').value = 0;
+    document.getElementById('val7').value = 0;
+    socket.emit("ukazArduinuSTOP");
+});
+    
+STARTctrlForwardBackwardButton.addEventListener('click', function() {
+    STARTctrlForwardBackward = 1; // prižgemo zastavico, da se kontrolni algoritem LAHKO ZAČNE
+/*    zelenaVrednostNaprej = 0;
+    zelenaVrednostNazaj = 0;
+    document.getElementById('zelenaVrednostNaprej').value = 0;
+    document.getElementById('zelenaVrednostNazaj').value = 0;
+    document.getElementById('val1').value = 0;
+    document.getElementById('val3').value = 0;
+    socket.emit("ukazArduinuSTOP");
+*/    
+});            
+    
+// ***********************************************************************
+// LEVO - DESNO
+// ***********************************************************************
+
+levPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val4').value;
+    document.getElementById('val5').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val5').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+levPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val4').value;
+    document.getElementById('val5').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val5').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+desPWMplus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val6').value;
+    document.getElementById('val7').value++; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val7').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+
+desPWMminus.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val6').value;
+    document.getElementById('val7').value--; // povečamo vrednost PWM za 1
+    valuePWM = document.getElementById('val7').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});    
+    
+send2.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val4').value;
+    valuePWM = document.getElementById('val5').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});
+    
+send3.addEventListener('click', function() {
+    var stevilkaUkaza = 3;
+    pinNo = document.getElementById('val6').value;
+    valuePWM = document.getElementById('val7').value;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": pinNo, "valuePWM": valuePWM});
+});        
+    
+socket.on('klientBeri1', function(data) {
+    log(data.vrednost);
+    log(data.cas);
+    encoderValueLeft = data.vrednost;
+    ctx1.clearRect(0,0,canvas1.width, canvas1.height); // brišemo platno -> clearRect
+    ctx1.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y1.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y1[999] = encoderValueLeft;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx1.lineTo(x1[i], (100 - y1[i] * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx1.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx1.fillText(encoderValueLeft, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx1.fillText("1", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx1.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra
+});
+    
+socket.on('readOutFrequencyLeft', function(data) {
+    log("F = " + data.stevilo);
+    log("F = " + data.frekvenca);
+    
+    ctx3.clearRect(0,0,canvas3.width, canvas3.height); // brišemo platno -> clearRect
+    ctx3.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y3.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y3[999] = data.frekvenca;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx3.lineTo(x3[i], (100 - (y3[i] / 50) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx3.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx3.fillText(data.frekvenca, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx3.fillText("50", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx3.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+    var stevilkaUkaza = 2;
+    
+    document.getElementById('val3').value;
+    
+    if (data.frekvenca < zelenaVrednostNaprej) {
+        document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    else if (data.frekvenca > zelenaVrednostNaprej) {
+        document.getElementById('val1').value--; // zmanjšamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    
+});
+    
+socket.on('readOutFrequencyRight', function(data) {
+    log("F = " + data.stevilo);
+    log("F = " + data.frekvenca);
+    
+    ctx6.clearRect(0,0,canvas6.width, canvas6.height); // brišemo platno -> clearRect
+    ctx6.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y6.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y6[999] = data.frekvenca;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx6.lineTo(x6[i], (100 - (y6[i] / 50) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx6.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx6.fillText(data.frekvenca, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx6.fillText("50", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx6.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+    // var stevilkaUkaza = 2;
+    
+    /*
+    document.getElementById('val3').value;
+    
+    if (data.frekvenca < document.getElementById('zelenaVrednost').value) {
+        document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    else if (data.frekvenca > document.getElementById('zelenaVrednost').value) {
+        document.getElementById('val1').value--; // zmanjšamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    */
+    
+});        
+    
+ 
+    
+    
+    
+    
+    
+socket.on('readOutFrequencyLeftRight', function(data) {
+    log("F = " + data.leftCount);
+    log("F = " + data.frequencyLeft);
+    
+    ctx3.clearRect(0,0,canvas3.width, canvas3.height); // brišemo platno -> clearRect
+    ctx3.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y3.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y3[999] = data.frequencyLeft;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx3.lineTo(x3[i], (100 - (y3[i] / 50) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx3.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx3.fillText(data.frequencyLeft, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx3.fillText("50", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx3.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+    var stevilkaUkaza = 2;
+    
+    document.getElementById('val3').value;
+    
+    // **************************************************************************************
+    // Kontrolni algoritem ZAČETEK
+    // **************************************************************************************
+
+    // *************************************************************************
+    // Del algoritma za naprej
+    // *************************************************************************
+    
+    if (zelenaVrednostNazaj == 0 && STARTctrlFW == 1) { // le v primeru, da želene vrednosti v smeri nazaj nismo podali izvedemo algoritem za naprej
+    
+        if (data.frequencyLeft < zelenaVrednostNaprej || data.frequencyRight < zelenaVrednostNaprej) { // upoštevati moramo oba enkoderja, saj se lahko enkrat vrti le levi, drugič pa le desni
+            
+            if (document.getElementById('val1').value < 150) { // omejimo najvišjo vrednost PWM za naprej na 150 
+            
+                document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+                valuePWM = document.getElementById('val1').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+        
+                if (data.frequencyLeft > data.frequencyRight) { // korekcija če je razlika v hitrosti vrtenja levega in desnega kolesa
+                    
+                    if (document.getElementById('val5').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val5').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val7').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft < data.frequencyRight) { // korekcija če je razlika v hitrosti vrtenja levega in desnega kolesa
+                    
+                    if (document.getElementById('val5').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val5').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150 
+                        document.getElementById('val7').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+            }
+        }
+        else if (data.frequencyLeft > zelenaVrednostNaprej || data.frequencyRight > zelenaVrednostNaprej) {
+            
+            if (document.getElementById('val1').value > 0) { // omejimo najnižjo vrednost PWM za NAPREJ na 0 - DA NE GREMO V - (divja rotacia!) 
+            
+                document.getElementById('val1').value--; // zmanjšamo vrednost PWM za 1
+                valuePWM = document.getElementById('val1').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+
+                if (data.frequencyLeft > data.frequencyRight) {
+                   
+                    if (document.getElementById('val5').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val5').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val7').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft < data.frequencyRight) {
+                   
+                    if (document.getElementById('val5').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val5').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150
+                        document.getElementById('val7').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+            }
+
+        }
+    }
+    
+    // *****************************************************************************
+    // Del algoritma za nazaj
+    // *****************************************************************************
+    
+    else if (zelenaVrednostNaprej == 0 && STARTctrlBK == 1) {// // le v primeru, da želene vrednosti v smeri naprej nismo podali izvedemo algoritem za nazaj
+        //socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": 1}); // za vsak primer pin naprej postavimo na 0
+    
+        if (data.frequencyLeft < zelenaVrednostNazaj || data.frequencyRight < zelenaVrednostNazaj) { // upoštevati moramo oba enkoderja, saj se lahko enkrat vrti le levi, drugič pa le desni
+            
+            if (document.getElementById('val3').value < 150) { // omejimo najvišjo vrednost za nazaj na 150 
+        
+                document.getElementById('val3').value++; // povečamo vrednost PWM nazaj za 1
+                valuePWM = document.getElementById('val3').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 6, "valuePWM": valuePWM});
+        
+                if (data.frequencyLeft < data.frequencyRight) {
+                    
+                    if (document.getElementById('val5').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val5').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val7').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft > data.frequencyRight) {
+                    
+                    if (document.getElementById('val5').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val5').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150 
+                        document.getElementById('val7').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+            }
+        
+        }
+        else if (data.frequencyLeft > zelenaVrednostNazaj || data.frequencyRight > zelenaVrednostNazaj) {
+            
+            if (document.getElementById('val3').value > 0) { // omejimo najnižjo vrednost za NAZAJ na 0 - DA NE GREMO V - (divja rotacia!) 
+
+                document.getElementById('val3').value--; // zmanjšamo vrednost PWM nazaj za 1
+                valuePWM = document.getElementById('val3').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 6, "valuePWM": valuePWM});
+
+                if (data.frequencyLeft < data.frequencyRight) {
+                    
+                    if (document.getElementById('val5').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val5').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val7').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft > data.frequencyRight) {
+                    
+                    if (document.getElementById('val5').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val5').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val5').value;
+                    
+                    if (document.getElementById('val7').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150 
+                        document.getElementById('val7').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 10, "valuePWM": valuePWMright});
+                }
+            }
+        }
+    
+    
+    }
+    
+    
+    // *************************************************************************
+    // Del algoritma za SpinLEFT
+    // *************************************************************************
+    
+    if (zelenaVrednostSpinDesno == 0 && STARTctrlSpinL == 1) { // le v primeru, da želene vrednosti v smeri SpinDesno nismo podali izvedemo algoritem za SpinLevo
+    
+        if (data.frequencyLeft < zelenaVrednostSpinLevo || data.frequencyRight < zelenaVrednostSpinLevo) { // upoštevati moramo oba enkoderja, saj se lahko enkrat vrti le levi, drugič pa le desni
+            
+            if (document.getElementById('val5').value < 150) { // omejimo najvišjo vrednost PWM za naprej na 150 
+            
+                document.getElementById('val5').value++; // povečamo vrednost PWM za 1
+                valuePWM = document.getElementById('val5').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": 3, "pinNo": 9, "valuePWM": valuePWM});
+        
+                if (data.frequencyLeft > data.frequencyRight) { // korekcija če je razlika v hitrosti vrtenja levega in desnega kolesa
+                    
+                    if (document.getElementById('val1').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val1').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val3').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft < data.frequencyRight) { // korekcija če je razlika v hitrosti vrtenja levega in desnega kolesa
+                    
+                    if (document.getElementById('val1').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val1').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150 
+                        document.getElementById('val3').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+            }
+        }
+        else if (data.frequencyLeft > zelenaVrednostSpinLevo || data.frequencyRight > zelenaVrednostSpinLevo) {
+            
+            if (document.getElementById('val5').value > 0) { // omejimo najnižjo vrednost PWM za NAPREJ na 0 - DA NE GREMO V - (divja rotacia!) 
+            
+                document.getElementById('val5').value--; // zmanjšamo vrednost PWM za 1
+                valuePWM = document.getElementById('val5').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 9, "valuePWM": valuePWM});
+
+                if (data.frequencyLeft > data.frequencyRight) {
+                   
+                    if (document.getElementById('val1').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val1').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val3').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft < data.frequencyRight) {
+                   
+                    if (document.getElementById('val1').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val1').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150
+                        document.getElementById('val3').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val7').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+            }
+
+        }
+    }
+    
+    // *****************************************************************************
+    // Del algoritma za SpinRIGHT
+    // *****************************************************************************
+    
+    else if (zelenaVrednostSpinLevo == 0 && STARTctrlSpinR == 1) { // le v primeru, da želene vrednosti v smeri SpinLevo nismo podali izvedemo algoritem za SpinDesno
+    
+        if (data.frequencyLeft < zelenaVrednostSpinDesno || data.frequencyRight < zelenaVrednostSpinDesno) { // upoštevati moramo oba enkoderja, saj se lahko enkrat vrti le levi, drugič pa le desni
+            
+            if (document.getElementById('val7').value < 150) { // omejimo najvišjo vrednost za desno na 150 
+        
+                document.getElementById('val7').value++; // povečamo vrednost PWM nazaj za 1
+                valuePWM = document.getElementById('val7').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 10, "valuePWM": valuePWM});
+        
+                if (data.frequencyLeft < data.frequencyRight) {
+                    
+                    if (document.getElementById('val1').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val1').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val3').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft > data.frequencyRight) {
+                    
+                    if (document.getElementById('val1').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val1').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150 
+                        document.getElementById('val3').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+            }
+        
+        }
+        else if (data.frequencyLeft > zelenaVrednostSpinDesno || data.frequencyRight > zelenaVrednostSpinDesno) {
+            
+            if (document.getElementById('val7').value > 0) { // omejimo najnižjo vrednost za NAZAJ na 0 - DA NE GREMO V - (divja rotacia!) 
+
+                document.getElementById('val7').value--; // zmanjšamo vrednost PWM nazaj za 1
+                valuePWM = document.getElementById('val7').value;
+                socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 10, "valuePWM": valuePWM});
+
+                if (data.frequencyLeft < data.frequencyRight) {
+                    
+                    if (document.getElementById('val1').value < 150) { // omejimo najvišjo vrednost PWM za levo na 150 
+                        document.getElementById('val1').value++; // povečamo vrednost PWM za LEVO rotacijo za 1
+                    }
+                    valuePWMleft = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value > 0) { // omejimo najmanjšo vrednost PWM za desno na 0 
+                        document.getElementById('val3').value--; // zmanjšamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWMleft});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+                else if (data.frequencyLeft > data.frequencyRight) {
+                    
+                    if (document.getElementById('val1').value > 0) { // omejimo najmanjšo vrednost PWM za levo na 0 
+                        document.getElementById('val1').value--; // povečamo vrednost PWM za LEVO rotacijo 1
+                    }
+                    valuePWM = document.getElementById('val1').value;
+                    
+                    if (document.getElementById('val3').value < 150) { // omejimo najvišjo vrednost PWM za desno na 150 
+                        document.getElementById('val3').value++; // povečamo vrednost PWM za DESNO rotacijo za 1
+                    }
+                    valuePWMright = document.getElementById('val3').value;
+                    
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 5, "valuePWM": valuePWM});
+                    socket.emit("ukazArduinu", {"stevilkaUkaza": 2, "pinNo": 6, "valuePWM": valuePWMright});
+                }
+            }
+        }
+    
+    
+    }
+    
+    
+    // **************************************************************************************
+    // Kontrolni algoritem KONEC
+    // **************************************************************************************   
+    
+    log("F = " + data.rightCount);
+    log("F = " + data.frequencyRight);
+    
+    ctx6.clearRect(0,0,canvas6.width, canvas6.height); // brišemo platno -> clearRect
+    ctx6.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y6.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y6[999] = data.frequencyRight;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx6.lineTo(x6[i], (100 - (y6[i] / 50) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx6.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx6.fillText(data.frequencyRight, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx6.fillText("50", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx6.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra 
+    
+    // var stevilkaUkaza = 2;
+    
+    /*
+    document.getElementById('val3').value;
+    
+    if (data.frekvenca < document.getElementById('zelenaVrednost').value) {
+        document.getElementById('val1').value++; // povečamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    else if (data.frekvenca > document.getElementById('zelenaVrednost').value) {
+        document.getElementById('val1').value--; // zmanjšamo vrednost PWM za 1
+        valuePWM = document.getElementById('val1').value;
+        socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza, "pinNo": 5, "valuePWM": valuePWM});
+    }
+    */
+    
+});            
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+socket.on('klientBeri2', function(data) {
+    log(data.vrednost);
+    log(data.cas);
+    encoderValueRight = data.vrednost;
+    ctx4.clearRect(0,0,canvas4.width, canvas4.height); // brišemo platno -> clearRect
+    ctx4.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y4.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y4[999] = encoderValueRight;
+    for (i=0; i<1000; i++) { // zanka za izris vrednosti na platnu
+        ctx4.lineTo(x4[i], (100 - y4[i] * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx4.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx4.fillText(encoderValueRight, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx4.fillText("1", 973, 10); //Izpišemo min vrednost potenciometra
+    ctx4.fillText("0", 973, 97); // Izpišemo max vrednost potenciometra
+});
+
+socket.on('sporociloKlientu', function(msg) {
+    log(msg);
+});
+
+</script>
+</body>
+</html>

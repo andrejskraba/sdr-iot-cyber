@@ -1,0 +1,81 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="application/javascript; charset=UTF-8">
+<title>web led switch</title>
+
+</head>
+<body onload="load();"> <!-- Tu pokličemo funkcijo load() za nastavitev spremenljivk ob odprtju html strani -->
+<script src="/socket.io/socket.io.js"></script>    
+
+
+<div >
+
+<canvas id="cv" width = "100" height = "100" style="border:1px dashed #00c3c3; "></canvas>
+
+</div>
+
+<div class = "izpisRazred" id="izpis"></div>
+
+<script type="text/javascript" charset="UTF-8">
+
+var potVrednost = 0;
+var output = document.getElementById('izpis');
+var stevec = 0;
+var vrednostPotenc;
+var prejVrednostPotenc;
+var x = new Array(); // polje (Array) za x spremenljivko
+var y = new Array();
+var canvas, ctx; // spremenljivki za platno in kontekst (ctx)
+
+function load() {
+	canvas = document.getElementById("cv");
+	ctx = canvas.getContext("2d");
+	
+	//* GRAF *********************************************************************************************************
+	ctx.lineWidth =   "1";
+	ctx.strokeStyle = "#ef0077";
+	
+	for (i=0; i < 100; i++) { // zanka za zapolnitev polj z naključnimi vrednostmi
+		x[i] = i; // za x so vrednosti: 0, 1, 2, ...
+		y[i] = 100; // za y so vrednosti 100
+		ctx.lineTo(x[i], y[i]);  // narišemo linijo do naslednje točke (postavimo jo na platno; ni še prikazana)
+		                            // za prikaz moramo zapisati še ctx.stroke()
+	}
+	ctx.stroke(); // linijo prikažemo na platnu (canvas)	
+	//* GRAF **********************************************************************************************************
+}
+
+
+function log(msg) { // funkcija za izpis sporočil z izvedenim pomikom (scroll)
+    var node=document.createElement("tr"); // ustvarimo spremenljivko node kot vrstico tabele za izpis
+    var textnode=document.createTextNode(stevec + " | " + msg); // ustvarimo element s tekstom (vrednost stanja)
+    node.appendChild(textnode); // dodamo izpis k "node" t.j. vrstici tabele
+    output.insertBefore(node,output.childNodes[0]); // output je spremenljivka div-a t.j. output = document.getElementById("output")
+    if (stevec > 9) { // če je vrstic več kot 10 (šteti začnemo z 0)
+        output.removeChild(output.childNodes[10],output.childNodes[10]); // odstranimo najstarejši zapis
+    }
+    stevec = stevec + 1; // povečamo števec števila izpisanih sporočil
+}
+
+var socket = io.connect('http://192.168.3.205:8080');
+socket.on('klientBeri', function(value) {
+    log(value);
+    potVrednost = value;
+    ctx.clearRect(0,0,canvas.width, canvas.height); // brišemo platno -> clearRect
+    ctx.beginPath(); // to vrstico moramo zapisati, da se prične izris vsebine na platnu znova
+    y.splice(0,1); // na mestu 0 v polju y izbrišemo eno vrednost
+    y[99] = potVrednost; 
+	//var factor=1023; //faktor za skaliranje grafa, 100 UZ, 1023 za optiko
+    for (i=0; i<100; i++) { // zanka za izris vrednosti na platnu
+        ctx.lineTo(x[i], (100 - (y[i] / 1023) * 100 )); // narišemo linijo do naslednje točke ; 100 -, zaradi obrnjenega izrisa grafa, 0,0 je levo zgoraj na monitorju
+    }
+    ctx.stroke(); // če želimo linijo prikazati na platnu moramo uporabiti "stroke()"
+    ctx.fillText(potVrednost, 1, 10); //Izpišemo trenutno vrednost potenciometra
+    ctx.fillText("100", 73, 10); //Izpišemo min vrednost potenciometra
+    ctx.fillText("0", 73, 97); // Izpišemo max vrednost potenciometra
+});
+
+</script>
+
+</body>
+</html>

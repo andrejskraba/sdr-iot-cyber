@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+
+<html>
+<head>
+    <title>buttongui</title>
+</head>
+
+<body>
+
+<input id="val0" value=5 />
+<input id="val1" value=10 />    
+<input id="val2" value=2 />
+<input id="val3" value=1 />        
+<button id="send">Send</button>    
+<button id="stop">Stop</button>
+<br>    
+<button id="buttonOn">On</button>
+<button id="buttonOff">Off</button>
+
+<br>
+
+<div id="output"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+// JavaScript, ki bo uporabljen na strani klienta zapišemo tu
+var socket = io.connect("192.168.3.205:8080"); // ustvarimo spremenljivko socket in povemo, kam se povežemo (vtaknemo)
+                                               // io.connect je iz knjižnice socket.io.js, argument je, kam se priključimo
+                                               // ta vrstica pove, naj se klient poveže s strežnikom na naslovu http://93.103.18.222:8080
+                                               // torej zgrabimo socket connection na portu 8080
+var output    = document.getElementById('output')
+  , buttonOn  = document.getElementById('buttonOn') // dodamo spremenljivko za gumb On ... t.j. poskrbimo, da je html ločen od javascript kode (če imamo browser, ki ne podpira JavaScript-a - unobtrusive JS)
+  , send = document.getElementById('send') // dodamo spremenljivko za gumb Send
+  , stop = document.getElementById('stop') // dodamo spremenljivko za gumb Send
+  , buttonOff = document.getElementById('buttonOff'); // dodamo spremenljivko za gumb Off    
+
+var stevec = 0; // števec števila sporočil
+
+function log(msg) { // funkcija za izpis sporočil z izvedenim pomikom (scroll)
+    var node=document.createElement("tr"); // ustvarimo spremenljivko node kot vrstico tabele za izpis
+    var textnode=document.createTextNode(stevec + " | " + msg); // ustvarimo element s tekstom (vrednost stanja)
+    node.appendChild(textnode); // dodamo izpis k "node" t.j. vrstici tabele
+	output.insertBefore(node,output.childNodes[0]); // output je spremenljivka div-a t.j. output = document.getElementById("output")
+        if (stevec > 9) { // če je vrstic več kot 10 (šteti začnemo z 0)
+            output.removeChild(output.childNodes[10],output.childNodes[10]); // odstranimo najstarejši zapis
+		}
+    stevec = stevec + 1; // povečamo števec števila izpisanih sporočil
+}
+
+buttonOn.addEventListener('click', function() {
+    var stevilkaUkaza = 1;
+    socket.emit("ukazArduinu", {"stevilkaUkaza": stevilkaUkaza});
+});
+
+buttonOff.addEventListener('click', function() {
+    socket.emit("stop");
+});
+    
+send.addEventListener('click', function() {
+    PWMpinNo = document.getElementById('val0').value;
+    valuePWM = document.getElementById('val1').value;
+    digitalPinNo = document.getElementById('val2').value;
+    valueDigitalPin = document.getElementById('val3').value;
+    socket.emit("directionAndPWM", {"PWMpinNo": PWMpinNo, "valuePWM": valuePWM, "digitalPinNo": digitalPinNo, "valueDigitalPin": valueDigitalPin});
+    
+});
+    
+stop.addEventListener('click', function() {
+    socket.emit("stop");
+});    
+
+socket.on('sporociloKlientu', function(msg) {
+    log(msg);
+});
+
+</script>
+</body>
+</html>
